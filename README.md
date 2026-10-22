@@ -24,6 +24,21 @@ npm test             # テスト
 | `SCANS_PER_WINDOW` | `10` | 1 IP あたり 10 分間の診断回数上限 |
 | `TRUST_PROXY` | 未設定（Docker では `1`） | `1` でプロキシが `X-Forwarded-For` の末尾に追記したクライアントIPを使う |
 | `ALLOW_PRIVATE_TARGETS` | 未設定 | `1` で内部ネットワーク宛ての診断を許可（ローカル検証用。公開環境では設定しない） |
+| `ACTIVE_CHECK_PASSWORD_HASH` | `hdhkt0626` の SHA-256 | アクティブ検査のパスワード（SHA-256 ハッシュ）。`printf '新パスワード' \| sha256sum` の値を設定して変更する |
+
+## アクティブ検査（PHP2Shell 前提条件）
+
+通常のチェックに加えて、PHP2Shell の悪用前提条件を調べる**アクティブ検査**があります。
+対象サーバーにセッションを作らせ POST を送るため、WAF/IDS に検知される可能性があり、通常より踏み込んだ検査です。
+そのため、フォームの「アクティブ検査」欄に**パスワードを入力したときだけ**実行されます（運用側の許可がある前提）。
+送信するのは良性の固定値のみで、PoC・攻撃コード・大きなファイルは一切送りません。
+
+| チェック内容 | チェック対象 | 判定 |
+| --- | --- | --- |
+| クライアントが指定したセッションIDをサーバーが受け付けるか（`session.use_strict_mode = 0` の兆候） | 良性の固定IDを Cookie で送った GET への `Set-Cookie` | 受け付ける＝要対応 |
+| `session.upload_progress` の有効性（前提条件のひとつ） | `PHP_SESSION_UPLOAD_PROGRESS` フィールド＋数バイトのダミーファイルの multipart POST 1回 | 外部からは確定不能のため手動確認（サーバー内で `php -i \| grep upload_progress`） |
+
+パスワードは `ACTIVE_CHECK_PASSWORD_HASH` 環境変数で変更できます（平文はソースに置かず SHA-256 で保持）。
 
 ## Cloud Run へのデプロイ（GitHub 連携）
 

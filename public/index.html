@@ -43,6 +43,13 @@
         <p class="help">1. バージョン露出、4. Cookie、6. HTTPヘッダーは常に確認します。</p>
       </details>
 
+      <details class="options active-opt">
+        <summary>アクティブ検査（PHP2Shell 前提条件）— パスワードが必要</summary>
+        <p class="help">セッションID受付（session.use_strict_mode の兆候）と session.upload_progress の有効性を調べます。対象サーバーにセッションを作らせPOSTを送るため、WAF/IDS に検知される可能性があり、通常チェックより踏み込んだ検査です。<strong>運用側の許可があるサイトにのみ</strong>、パスワードを入力して実行してください。送るのは良性の固定値だけで、攻撃コードは送りません。</p>
+        <label class="field-label" for="active-password">アクティブ検査のパスワード</label>
+        <input id="active-password" name="activePassword" type="password" autocomplete="off" placeholder="入力した場合のみアクティブ検査を実行します">
+      </details>
+
       <label class="consent">
         <input id="consent" type="checkbox" name="consent">
         <span>このサイトは自分が管理している、または運用側からチェックの許可を得ています。</span>
@@ -64,6 +71,7 @@
         </div>
         <p id="p2s-versions" class="p2s-versions" hidden></p>
         <p id="p2s-detail" class="p2s-detail"></p>
+        <div id="p2s-preconditions" class="p2s-pre" hidden></div>
         <div id="p2s-action" class="p2s-action" hidden></div>
         <div id="p2s-findings" hidden>
           <h3>見つかったPHPバージョン</h3>

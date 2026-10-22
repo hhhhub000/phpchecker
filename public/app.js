@@ -95,6 +95,7 @@ function resetPhp2Shell() {
   $('#p2s-headline').textContent = 'チェック中です…';
   $('#p2s-detail').textContent = '外部から見えるPHPのバージョンを集めています。';
   $('#p2s-versions').hidden = true;
+  $('#p2s-preconditions').hidden = true;
   $('#p2s-action').hidden = true;
   $('#p2s-findings').hidden = true;
 }
@@ -108,6 +109,16 @@ function renderPhp2Shell(p) {
   const versions = $('#p2s-versions');
   versions.hidden = !p.versions?.length;
   if (p.versions?.length) versions.replaceChildren('検出したPHPバージョン: ', ...p.versions.map((v) => h('strong', {}, `PHP ${v}`)));
+  const pre = $('#p2s-preconditions');
+  if (p.preconditions?.tested) {
+    pre.hidden = false;
+    pre.className = `p2s-pre b-${p.preconditions.status}`;
+    pre.replaceChildren(
+      h('strong', {}, '悪用の前提条件（アクティブ検査）'),
+      h('ul', {}, p.preconditions.items.map((i) => h('li', {}, badge(i.status), `${i.title}: ${i.summary}`))));
+  } else {
+    pre.hidden = true;
+  }
   const action = $('#p2s-action');
   action.hidden = false;
   action.replaceChildren(h('strong', {}, '次のアクション'), h('p', {}, p.action));
@@ -185,6 +196,8 @@ form.addEventListener('submit', async (e) => {
   if (!$('#consent').checked) return showError('自分が管理する、または運用側の許可があるサイトであることを確認し、チェックを入れてください。');
   const options = {};
   for (const name of ['exposure', 'errors', 'cms', 'tls']) options[name] = form.elements[name].checked;
+  const activePassword = $('#active-password').value;
+  if (activePassword) options.active = true;
 
   report = null;
   $('#sections').replaceChildren();
@@ -198,7 +211,7 @@ form.addEventListener('submit', async (e) => {
   submitBtn.disabled = true;
   submitBtn.textContent = 'チェック中…';
   try {
-    await runScan({ url, consent: true, options });
+    await runScan({ url, consent: true, options, ...(activePassword ? { activePassword } : {}) });
   } catch (err) {
     showError(err.message);
   } finally {
@@ -229,6 +242,8 @@ function toMarkdown() {
     '',
     ...(p.findings.length ? ['| 判定 | バージョン | 表示されていた場所 |', '| --- | --- | --- |',
       ...p.findings.map((f) => `| ${STATUS_LABEL[f.status]} | ${f.version} | ${f.source} |`), ''] : []),
+    ...(p.preconditions?.tested ? ['### 悪用の前提条件（アクティブ検査）', '',
+      ...p.preconditions.items.map((i) => `- **[${STATUS_LABEL[i.status]}] ${i.title}**: ${i.summary}`), ''] : []),
     '# それ以外のチェック結果',
     '',
     '## 判定と次のアクション',

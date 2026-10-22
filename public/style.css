@@ -205,3 +205,14 @@ table.data td:first-child { width: 1%; white-space: nowrap; }
 }
 
 .overview-card { margin-top: 32px; }
+
+.active-opt summary { color: var(--warn); font-weight: 600; }
+.active-opt input[type="password"] { width: 100%; font: inherit; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); margin-top: 6px; }
+
+.p2s-pre { margin-top: 14px; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); border-left-width: 5px; background: var(--code-bg); }
+.p2s-pre.b-danger { border-left-color: var(--danger); }
+.p2s-pre.b-warn { border-left-color: var(--warn); }
+.p2s-pre.b-ok { border-left-color: var(--ok); }
+.p2s-pre.b-unknown, .p2s-pre.b-manual { border-left-color: var(--unknown); }
+.p2s-pre ul { margin: 6px 0 0; padding-left: 0; list-style: none; }
+.p2s-pre li { margin: 4px 0; display: flex; gap: 8px; align-items: baseline; }

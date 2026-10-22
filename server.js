@@ -1,10 +1,23 @@
 // PHPサイト外部診断ツールの Web サーバー（依存パッケージなし）
 import http from 'node:http';
+import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runScan, normalizeTargetUrl } from './lib/scanner.js';
 import { allowPrivateTargets } from './lib/net.js';
+
+// アクティブ検査（PHP2Shell 前提条件）のパスワード。平文は置かず SHA-256 ハッシュで保持する。
+// 既定値は "hdhkt0626"。ACTIVE_CHECK_PASSWORD_HASH 環境変数で上書きできる。
+const ACTIVE_CHECK_PASSWORD_HASH = (process.env.ACTIVE_CHECK_PASSWORD_HASH
+  || 'bf321aa7dd2dc8241df216f04c91f03c450415359789accb4f69bc8e3d08e611').toLowerCase();
+
+function activePasswordOk(pw) {
+  if (typeof pw !== 'string' || !pw) return false;
+  const given = Buffer.from(crypto.createHash('sha256').update(pw).digest('hex'));
+  const expected = Buffer.from(ACTIVE_CHECK_PASSWORD_HASH);
+  return given.length === expected.length && crypto.timingSafeEqual(given, expected);
+}
 
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -74,6 +87,16 @@ async function handleScan(req, res) {
     return sendJson(res, 400, { error: err.message });
   }
 
+  // アクティブ検査はパスワードが一致したときだけ有効にする
+  const wantsActive = payload.options?.active === true || typeof payload.activePassword === 'string';
+  let active = false;
+  if (wantsActive) {
+    if (!activePasswordOk(payload.activePassword)) {
+      return sendJson(res, 403, { error: 'アクティブ検査のパスワードが正しくありません' });
+    }
+    active = true;
+  }
+
   const ip = clientIp(req);
   const now = Date.now();
   const recent = (history.get(ip) || []).filter((t) => now - t < WINDOW_MS);
@@ -100,6 +123,7 @@ async function handleScan(req, res) {
         errors: opts.errors !== false,
         cms: opts.cms !== false,
         tls: opts.tls !== false,
+        active,
       },
       onEvent: write,
     });
