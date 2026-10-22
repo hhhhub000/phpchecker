@@ -57,9 +57,16 @@ function renderSection(section) {
 
 function renderCounts() {
   const counts = {};
-  for (const s of report.sections) for (const i of s.items) counts[i.status] = (counts[i.status] || 0) + 1;
+  // アクティブ検査結果は上部に別枠で表示するため「それ以外」の件数には含めない
+  for (const s of report.sections) if (s.id !== 'active') for (const i of s.items) counts[i.status] = (counts[i.status] || 0) + 1;
   $('#counts').replaceChildren(...STATUS_ORDER.filter((s) => counts[s]).map((s) =>
     h('span', { class: `badge s-${s}` }, `${STATUS_LABEL[s]} ${counts[s]}`)));
+}
+
+function renderActiveNotEnabled() {
+  $('#active-result').replaceChildren(h('section', { class: 'card active-off' },
+    h('p', {}, 'アクティブ検査が有効になっていません'),
+    h('p', { class: 'help' }, 'PHP2Shell の悪用前提条件（セッションID受付・upload_progress）を調べるには、フォームの「アクティブ検査」欄にパスワードを入力してください。')));
 }
 
 function renderOverview(extra = {}) {
@@ -141,12 +148,18 @@ function handleEvent(ev) {
     if (first) setProgress(first.id, 'running');
     $('#results').hidden = false;
     renderOverview();
+    // アクティブ検査が有効でない（スキップ）場合は上部にその旨を表示
+    if (ev.sections.find((s) => s.id === 'active')?.skipped) renderActiveNotEnabled();
   } else if (ev.type === 'section') {
     report.sections.push(ev.section);
     setProgress(ev.section.id, ev.section.skipped ? 'skipped' : 'done');
     const next = report.start.sections.find((s) => !s.skipped && !report.sections.some((d) => d.id === s.id));
     if (next) setProgress(next.id, 'running');
-    $('#sections').append(renderSection(ev.section));
+    if (ev.section.id === 'active') {
+      if (!ev.section.skipped) $('#active-result').replaceChildren(renderSection(ev.section));
+    } else {
+      $('#sections').append(renderSection(ev.section));
+    }
     renderCounts();
   } else if (ev.type === 'done') {
     Object.assign(report, ev);
@@ -201,6 +214,7 @@ form.addEventListener('submit', async (e) => {
 
   report = null;
   $('#sections').replaceChildren();
+  $('#active-result').replaceChildren();
   $('#verdicts').hidden = true;
   $('#results').hidden = true;
   resetPhp2Shell();

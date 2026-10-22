@@ -216,3 +216,7 @@ table.data td:first-child { width: 1%; white-space: nowrap; }
 .p2s-pre.b-unknown, .p2s-pre.b-manual { border-left-color: var(--unknown); }
 .p2s-pre ul { margin: 6px 0 0; padding-left: 0; list-style: none; }
 .p2s-pre li { margin: 4px 0; display: flex; gap: 8px; align-items: baseline; }
+
+.active-off p { margin: 0; }
+.active-off p:first-child { font-weight: 600; color: var(--muted); }
+.active-off .help { margin-top: 6px; }
