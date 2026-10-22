@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PHPサイト外部診断</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:,">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <h1>PHPサイト外部診断</h1>
+      <p class="lead">URLを入力すると、PHPで動くサイトを外側から非破壊で確認します。PHP2Shell（CVE-2026-109618 / CVE-2026-109619）の影響範囲照合、置き忘れファイル、エラー表示、Cookie、CMSバージョン、HTTPヘッダー・TLSをまとめてチェックします。</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card notice">
+      <h2>前提と注意事項</h2>
+      <ul>
+        <li><strong>対象は自分が管理する、または運用側の許可があるサイトに限ります。</strong>許可のない第三者サイトには実行しないでください。</li>
+        <li>送信するのは GET / HEAD / OPTIONS のみで、攻撃コードやシングルクォート等の入力は送りません。1回の診断は最大70リクエスト程度（同時2接続・間隔あり）です。</li>
+        <li><strong>「何も見えない」は判定不能であって、安全ではありません。</strong>最終判断はサーバー内部の確認か運用側への確認で行ってください。</li>
+      </ul>
+    </section>
+
+    <form id="scan-form" class="card form" novalidate>
+      <label for="url" class="field-label">チェックするURL</label>
+      <div class="url-row">
+        <input id="url" name="url" type="text" inputmode="url" autocomplete="url" placeholder="https://example.com/ または https://example.com/page.php?id=1" required>
+        <button id="submit" type="submit">チェック開始</button>
+      </div>
+      <p class="help">パラメータ付きのURL（例: <code>?id=1</code>）を入力すると、配列化（<code>?id[]=1</code>）した1回のリクエストでPHPエラー表示も確認します。ログインページのURLを入れるとCookie属性を確認しやすくなります。</p>
+
+      <details class="options">
+        <summary>チェック項目の選択</summary>
+        <label><input type="checkbox" name="exposure" checked> 2. 置き忘れファイル・情報漏えい（約20リクエスト）</label>
+        <label><input type="checkbox" name="errors" checked> 3. エラー表示・HTTPメソッド</label>
+        <label><input type="checkbox" name="cms" checked> 5. CMS/LMS/ライブラリのバージョン</label>
+        <label><input type="checkbox" name="tls" checked> 6. TLS 設定（ハンドシェイク確認）</label>
+        <p class="help">1. バージョン露出、4. Cookie、6. HTTPヘッダーは常に確認します。</p>
+      </details>
+
+      <label class="consent">
+        <input id="consent" type="checkbox" name="consent">
+        <span>このサイトは自分が管理している、または運用側からチェックの許可を得ています。</span>
+      </label>
+      <p id="form-error" class="form-error" role="alert" hidden></p>
+    </form>
+
+    <section id="progress" class="card" hidden>
+      <h2>進行状況</h2>
+      <ol id="progress-list" class="progress-list"></ol>
+    </section>
+
+    <section id="results" hidden>
+      <div class="card">
+        <div class="results-head">
+          <h2>診断結果</h2>
+          <div class="export">
+            <button id="copy-md" type="button" class="secondary" disabled>Markdownをコピー</button>
+            <button id="download-json" type="button" class="secondary" disabled>JSONを保存</button>
+          </div>
+        </div>
+        <dl id="overview" class="overview"></dl>
+        <div id="counts" class="counts"></div>
+      </div>
+
+      <div id="verdicts" class="card" hidden>
+        <h2>8. 判定と次のアクション</h2>
+        <div id="verdict-list" class="verdicts"></div>
+        <h3>運用側への確認事項（PHP2Shell）</h3>
+        <ul class="checklist">
+          <li><label><input type="checkbox"> PHPのバージョン（ディストリ版の場合はパッケージのバージョン）</label></li>
+          <li><label><input type="checkbox"> CVE-2026-109618 / CVE-2026-109619 の修正適用の有無と適用日時</label></li>
+          <li><label><input type="checkbox"> 適用後に PHP-FPM（または Apache）を再起動したか</label></li>
+          <li><label><input type="checkbox"> 2026年10月20日以降のログで、不審なアクセスや PHP ワーカーの異常終了がないか確認したか</label></li>
+        </ul>
+      </div>
+
+      <div id="sections"></div>
+
+      <section class="card">
+        <h2>7. あわせて使える外部ツール</h2>
+        <p class="help">いずれもヘッダーや公開情報を読む確認が基本です。アクティブな検査は運用側の許可を得てから実施してください。GitHub のツールは実行前に必ずコードを読んでください。</p>
+        <div class="table-scroll">
+          <table class="tools">
+            <thead><tr><th>ツール</th><th>確認できること</th><th>種別</th></tr></thead>
+            <tbody>
+              <tr><td><a href="https://atlas.brandefense.io/php-vulnerability-check" target="_blank" rel="noopener noreferrer">ATLAS PHP2Shell Vulnerability Check</a></td><td>表示PHPバージョンとPHP2Shell影響範囲の照合</td><td>Web・受動</td></tr>
+              <tr><td><a href="https://pentest-tools.com/network-vulnerability-scanning/php2shell-scanner" target="_blank" rel="noopener noreferrer">PHP2Shell scanner (Pentest-Tools.com)</a></td><td>同上。PDFレポート出力あり</td><td>Web・受動</td></tr>
+              <tr><td><a href="https://github.com/CyberRoute/php2shell-scanner" target="_blank" rel="noopener noreferrer">CyberRoute/php2shell-scanner</a></td><td>バージョン判定＋悪用の前提条件</td><td>CLI・アクティブ（許可必須）</td></tr>
+              <tr><td><a href="https://github.com/JoasASantos/php2shell-scanner" target="_blank" rel="noopener noreferrer">JoasASantos/php2shell-scanner</a></td><td>サブドメイン列挙＋バージョン判定</td><td>CLI・受動中心</td></tr>
+              <tr><td><a href="https://www.ssllabs.com/ssltest/" target="_blank" rel="noopener noreferrer">SSL Labs</a></td><td>TLS設定・証明書の総合評価</td><td>Web・受動</td></tr>
+              <tr><td><a href="https://securityheaders.com/" target="_blank" rel="noopener noreferrer">securityheaders.com</a> / <a href="https://developer.mozilla.org/en-US/observatory" target="_blank" rel="noopener noreferrer">Mozilla Observatory</a></td><td>セキュリティヘッダーの評価</td><td>Web・受動</td></tr>
+              <tr><td><a href="https://wpscan.com/" target="_blank" rel="noopener noreferrer">WPScan</a></td><td>WordPress本体・プラグインの既知脆弱性</td><td>CLI・アクティブ（許可必須）</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="site-footer wrap">
+    <p>外部診断でわかるのは「危険な兆候が見えるか」までで、「安全である」ことの証明にはなりません。</p>
+  </footer>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>
