@@ -3,15 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PHPサイト外部診断</title>
+  <title>PHP2Shell チェッカー</title>
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="data:,">
 </head>
 <body>
   <header class="site-header">
     <div class="wrap">
-      <h1>PHPサイト外部診断</h1>
-      <p class="lead">URLを入力すると、PHPで動くサイトを外側から非破壊で確認します。PHP2Shell（CVE-2026-109618 / CVE-2026-109619）の影響範囲照合、置き忘れファイル、エラー表示、Cookie、CMSバージョン、HTTPヘッダー・TLSをまとめてチェックします。</p>
+      <h1>PHP2Shell チェッカー</h1>
+      <p class="lead">URLを入力すると、外部から見えるPHPのバージョンを PHP2Shell（CVE-2026-109618 / CVE-2026-109619）の修正版と照合します。あわせて、置き忘れファイル・エラー表示・Cookie・CMS・HTTPヘッダーなど、PHPサイトの外部診断もまとめて行います。</p>
+      <p class="fixed-versions">修正版: <strong>8.2.35</strong> / <strong>8.3.36</strong> / <strong>8.4.27</strong> / <strong>8.5.12</strong>　8.1以前は公式修正なし</p>
     </div>
   </header>
 
@@ -55,28 +56,61 @@
     </section>
 
     <section id="results" hidden>
-      <div class="card">
-        <div class="results-head">
-          <h2>診断結果</h2>
-          <div class="export">
-            <button id="copy-md" type="button" class="secondary" disabled>Markdownをコピー</button>
-            <button id="download-json" type="button" class="secondary" disabled>JSONを保存</button>
+      <section id="php2shell" class="card php2shell s-border-pending" aria-live="polite">
+        <p class="eyebrow">PHP2Shell（CVE-2026-109618 / CVE-2026-109619）の確認結果</p>
+        <div class="p2s-head">
+          <span id="p2s-badge" class="badge big s-info">確認中</span>
+          <h2 id="p2s-headline">チェック中です…</h2>
+        </div>
+        <p id="p2s-versions" class="p2s-versions" hidden></p>
+        <p id="p2s-detail" class="p2s-detail"></p>
+        <div id="p2s-action" class="p2s-action" hidden></div>
+        <div id="p2s-findings" hidden>
+          <h3>見つかったPHPバージョン</h3>
+          <div class="table-scroll">
+            <table class="data">
+              <thead><tr><th>判定</th><th>バージョン</th><th>表示されていた場所</th></tr></thead>
+              <tbody id="p2s-findings-body"></tbody>
+            </table>
           </div>
         </div>
-        <dl id="overview" class="overview"></dl>
-        <div id="counts" class="counts"></div>
-      </div>
-
-      <div id="verdicts" class="card" hidden>
-        <h2>8. 判定と次のアクション</h2>
-        <div id="verdict-list" class="verdicts"></div>
-        <h3>運用側への確認事項（PHP2Shell）</h3>
+        <h3>修正版</h3>
+        <div class="fixed-grid">
+          <div><span>8.2系</span><strong>8.2.35</strong></div>
+          <div><span>8.3系</span><strong>8.3.36</strong></div>
+          <div><span>8.4系</span><strong>8.4.27</strong></div>
+          <div><span>8.5系</span><strong>8.5.12</strong></div>
+          <div class="eol"><span>8.1以前</span><strong>修正なし</strong></div>
+        </div>
+        <h3>運用側への確認事項</h3>
         <ul class="checklist">
           <li><label><input type="checkbox"> PHPのバージョン（ディストリ版の場合はパッケージのバージョン）</label></li>
           <li><label><input type="checkbox"> CVE-2026-109618 / CVE-2026-109619 の修正適用の有無と適用日時</label></li>
           <li><label><input type="checkbox"> 適用後に PHP-FPM（または Apache）を再起動したか</label></li>
           <li><label><input type="checkbox"> 2026年10月20日以降のログで、不審なアクセスや PHP ワーカーの異常終了がないか確認したか</label></li>
         </ul>
+        <p class="help">外部から見えるバージョンだけで判定しています。バージョンが見えない場合は「判定不能」であって、安全ではありません。PHP2Shell の悪用前提条件（セッションID受付、upload_progress）まで調べる専用スキャナーはアクティブな検査のため、運用側の許可を得て検証環境から実施してください。</p>
+      </section>
+
+      <div class="card">
+        <div class="results-head">
+          <h2>診断の概要</h2>
+          <div class="export">
+            <button id="copy-md" type="button" class="secondary" disabled>Markdownをコピー</button>
+            <button id="download-json" type="button" class="secondary" disabled>JSONを保存</button>
+          </div>
+        </div>
+        <dl id="overview" class="overview"></dl>
+      </div>
+
+      <h2 class="group-title">それ以外のチェック結果</h2>
+      <p class="help group-help">PHP2Shell とは別の脆弱性・設定不備です。2章（置き忘れファイル）で見つかったものはパッチ状況と無関係に即対応が必要です。</p>
+      <div class="card">
+        <div id="counts" class="counts"></div>
+        <div id="verdicts" hidden>
+          <h3>判定と次のアクション</h3>
+          <div id="verdict-list" class="verdicts"></div>
+        </div>
       </div>
 
       <div id="sections"></div>

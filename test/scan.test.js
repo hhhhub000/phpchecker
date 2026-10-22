@@ -38,7 +38,9 @@ test('脆弱なサイトでは各種の問題を検出する', async () => {
   assert.equal(find(r, 'errors', 'methods').status, 'warn');
   assert.equal(find(r, 'cms', 'php-libs').status, 'danger');
   assert.equal(find(r, 'transport', 'https-redirect').status, 'danger');
-  assert.ok(r.verdicts.some((v) => v.title === '脆弱なバージョンが見える'));
+  assert.equal(r.php2shell.status, 'danger');
+  assert.ok(r.php2shell.versions.includes('8.3.30'));
+  assert.ok(r.php2shell.findings.some((f) => f.source.startsWith('phpinfo')));
   assert.ok(r.verdicts.some((v) => v.title === '2章のファイルが見える'));
   assert.ok(r.requestCount <= 70);
 });
@@ -69,7 +71,8 @@ test('対策済みのサイトでは問題を検出しない', async () => {
   assert.equal(find(r, 'transport', 'clickjacking').status, 'ok');
   assert.equal(find(r, 'transport', 'nosniff').status, 'ok');
   assert.equal(find(r, 'transport', 'csp').status, 'ok');
-  assert.ok(r.verdicts.some((v) => v.title.includes('判定不能')));
+  assert.equal(r.php2shell.status, 'unknown');
+  assert.equal(r.php2shell.findings.length, 0);
 });
 
 test('内部ネットワーク宛てのリクエストは既定で拒否する', async () => {

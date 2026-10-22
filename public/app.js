@@ -86,6 +86,36 @@ function renderVerdicts(verdicts) {
   $('#verdicts').hidden = false;
 }
 
+const P2S_BADGE = { danger: '要対応', warn: '要確認', unknown: '判定不能', ok: '修正版以上' };
+
+function resetPhp2Shell() {
+  $('#php2shell').className = 'card php2shell s-border-pending';
+  $('#p2s-badge').className = 'badge big s-info';
+  $('#p2s-badge').textContent = '確認中';
+  $('#p2s-headline').textContent = 'チェック中です…';
+  $('#p2s-detail').textContent = '外部から見えるPHPのバージョンを集めています。';
+  $('#p2s-versions').hidden = true;
+  $('#p2s-action').hidden = true;
+  $('#p2s-findings').hidden = true;
+}
+
+function renderPhp2Shell(p) {
+  $('#php2shell').className = `card php2shell s-border-${p.status}`;
+  $('#p2s-badge').className = `badge big s-${p.status}`;
+  $('#p2s-badge').textContent = P2S_BADGE[p.status] || STATUS_LABEL[p.status];
+  $('#p2s-headline').textContent = p.headline;
+  $('#p2s-detail').textContent = p.detail;
+  const versions = $('#p2s-versions');
+  versions.hidden = !p.versions?.length;
+  if (p.versions?.length) versions.replaceChildren('検出したPHPバージョン: ', ...p.versions.map((v) => h('strong', {}, `PHP ${v}`)));
+  const action = $('#p2s-action');
+  action.hidden = false;
+  action.replaceChildren(h('strong', {}, '次のアクション'), h('p', {}, p.action));
+  $('#p2s-findings').hidden = !p.findings.length;
+  $('#p2s-findings-body').replaceChildren(...p.findings.map((f) =>
+    h('tr', {}, h('td', {}, badge(f.status)), h('td', {}, f.version), h('td', {}, f.source))));
+}
+
 function setProgress(id, state) {
   const li = document.querySelector(`#progress-list li[data-id="${id}"]`);
   if (li) li.className = state;
@@ -110,6 +140,7 @@ function handleEvent(ev) {
   } else if (ev.type === 'done') {
     Object.assign(report, ev);
     renderOverview(ev);
+    renderPhp2Shell(ev.php2shell);
     renderVerdicts(ev.verdicts);
     $('#copy-md').disabled = false;
     $('#download-json').disabled = false;
@@ -159,6 +190,7 @@ form.addEventListener('submit', async (e) => {
   $('#sections').replaceChildren();
   $('#verdicts').hidden = true;
   $('#results').hidden = true;
+  resetPhp2Shell();
   $('#copy-md').disabled = true;
   $('#download-json').disabled = true;
   $('#progress').hidden = false;
@@ -177,8 +209,9 @@ form.addEventListener('submit', async (e) => {
 
 function toMarkdown() {
   const s = report.start;
+  const p = report.php2shell;
   const lines = [
-    '# PHPサイト外部診断 結果',
+    '# PHP2Shell チェック結果',
     '',
     `- 対象URL: ${s.target}`,
     s.finalUrl !== s.target ? `- 最終URL: ${s.finalUrl}` : null,
@@ -186,6 +219,17 @@ function toMarkdown() {
     `- 送信リクエスト数: ${report.requestCount}`,
     '',
     '> 外部診断でわかるのは「危険な兆候が見えるか」までで、「安全である」ことの証明にはなりません。',
+    '',
+    `## PHP2Shell（${p.cves.join(' / ')}）: ${P2S_BADGE[p.status]} — ${p.headline}`,
+    '',
+    p.detail,
+    '',
+    `- 次のアクション: ${p.action}`,
+    `- 修正版: ${p.fixedVersions.map((f) => f.fixed).join(' / ')}（8.1以前は公式修正なし）`,
+    '',
+    ...(p.findings.length ? ['| 判定 | バージョン | 表示されていた場所 |', '| --- | --- | --- |',
+      ...p.findings.map((f) => `| ${STATUS_LABEL[f.status]} | ${f.version} | ${f.source} |`), ''] : []),
+    '# それ以外のチェック結果',
     '',
     '## 判定と次のアクション',
     '',
@@ -202,7 +246,7 @@ function toMarkdown() {
     }
     lines.push('');
   }
-  lines.push('## 運用側への確認事項（PHP2Shell）', '',
+  lines.push('# 運用側への確認事項（PHP2Shell）', '',
     '- [ ] PHPのバージョン（ディストリ版の場合はパッケージのバージョン）',
     '- [ ] CVE-2026-109618 / CVE-2026-109619 の修正適用の有無と適用日時',
     '- [ ] 適用後にPHP-FPM（またはApache）を再起動したか',

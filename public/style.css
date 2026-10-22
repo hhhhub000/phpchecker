@@ -165,3 +165,41 @@ a { color: var(--accent); }
   .overview dd { margin-bottom: 6px; }
   .url-row button { width: 100%; }
 }
+
+/* PHP2Shell の確認結果（メイン表示） */
+.fixed-versions { margin: 8px 0 0; font-size: .9rem; color: var(--muted); }
+.fixed-versions strong { color: var(--text); }
+
+.php2shell { border-width: 2px; border-top-width: 8px; padding: 22px 24px; }
+.php2shell.s-border-pending { border-color: var(--border); }
+.php2shell.s-border-danger { border-color: var(--danger); }
+.php2shell.s-border-warn { border-color: var(--warn); }
+.php2shell.s-border-unknown { border-color: var(--unknown); }
+.php2shell.s-border-ok { border-color: var(--ok); }
+.eyebrow { margin: 0 0 8px; font-size: .85rem; font-weight: 600; color: var(--muted); }
+.p2s-head { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.p2s-head h2 { margin: 0; font-size: 1.7rem; line-height: 1.3; }
+.badge.big { font-size: 1.1rem; padding: 4px 16px; }
+.p2s-versions { font-size: 1.15rem; margin: 14px 0 0; display: flex; gap: 6px 12px; flex-wrap: wrap; align-items: baseline; }
+.p2s-versions strong { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 1.3rem; }
+.p2s-detail { margin: 10px 0 0; font-size: 1.02rem; }
+.p2s-action { margin-top: 14px; padding: 12px 14px; border-radius: 8px; background: var(--code-bg); }
+.p2s-action p { margin: 4px 0 0; }
+
+.fixed-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.fixed-grid div { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; }
+.fixed-grid span { font-size: .8rem; color: var(--muted); }
+.fixed-grid strong { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 1.1rem; }
+.fixed-grid .eol strong { font-family: inherit; color: var(--danger); }
+
+table.data { width: 100%; border-collapse: collapse; font-size: .9rem; }
+table.data th, table.data td { text-align: left; border-bottom: 1px solid var(--border); padding: 6px 8px; vertical-align: top; word-break: break-all; }
+table.data td:first-child { width: 1%; white-space: nowrap; }
+
+.group-title { font-size: 1.3rem; margin: 32px 0 4px; padding-top: 20px; border-top: 2px solid var(--border); }
+.group-help { margin: 0 0 12px; }
+
+@media (max-width: 560px) {
+  .p2s-head h2 { font-size: 1.35rem; }
+  .php2shell { padding: 18px 16px; }
+}
