@@ -20,8 +20,25 @@ npm test             # テスト
 | `PORT` / `HOST` | `3000` / `0.0.0.0` | 待ち受けアドレス |
 | `MAX_CONCURRENT_SCANS` | `4` | サーバー全体の同時診断数 |
 | `SCANS_PER_WINDOW` | `10` | 1 IP あたり 10 分間の診断回数上限 |
-| `TRUST_PROXY` | 未設定 | `1` でリバースプロキシの `X-Forwarded-For` を信頼 |
+| `TRUST_PROXY` | 未設定（Docker では `1`） | `1` でプロキシが `X-Forwarded-For` の末尾に追記したクライアントIPを使う |
 | `ALLOW_PRIVATE_TARGETS` | 未設定 | `1` で内部ネットワーク宛ての診断を許可（ローカル検証用。公開環境では設定しない） |
+
+## Cloud Run へのデプロイ（GitHub 連携）
+
+リポジトリ直下の `Dockerfile` でビルドできます（`PORT=8080`、`TRUST_PROXY=1` を設定済み）。
+
+1. Cloud Run コンソールで「サービスを作成」→「リポジトリから継続的にデプロイする」→「Cloud Build を設定」
+2. GitHub と連携してこのリポジトリとブランチを選択し、ビルドタイプに「Dockerfile」（ソースの場所 `/Dockerfile`）を選ぶ
+3. 認証は「未認証の呼び出しを許可」（公開する場合）、リクエストタイムアウトは 300 秒（既定）のままで可
+4. 作成すると、以降は選択したブランチへの push ごとに自動でビルド・デプロイされます
+
+CLI で行う場合: `gcloud run deploy phpchecker --source . --region asia-northeast1 --allow-unauthenticated`
+
+注意点:
+
+- 実行回数制限はインスタンスごとのメモリで管理しています。厳密に効かせたい場合は最大インスタンス数を小さくしてください（例: `--max-instances 2`）。
+- `ALLOW_PRIVATE_TARGETS` は Cloud Run では設定しないでください（メタデータサーバー等への SSRF を防ぐため）。
+- 誰でも使えるとサードパーティへの診断に悪用されうるため、社内利用なら IAP や Cloud Run の認証で利用者を限定することを推奨します。
 
 ## 実装したチェック
 

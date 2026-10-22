@@ -34,8 +34,9 @@ const history = new Map(); // ip -> timestamps
 
 function clientIp(req) {
   if (process.env.TRUST_PROXY === '1') {
+    // 先頭はクライアントが偽装できるため、プロキシ（Cloud Run 等）が末尾に追記した値を使う
     const xff = req.headers['x-forwarded-for'];
-    if (xff) return String(xff).split(',')[0].trim();
+    if (xff) return String(xff).split(',').map((s) => s.trim()).filter(Boolean).pop() || 'unknown';
   }
   return req.socket.remoteAddress || 'unknown';
 }
